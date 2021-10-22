@@ -1,0 +1,65 @@
+using unirest_net.http;
+using System.Xml;
+HttpResponse<string> response = Unirest.get("https://microsoft-azure-translation-v1.p.rapidapi.com/translate?from=en&to=es&text=Hello%2C+world!")
+              .header("X-RapidAPI-Host", "microsoft-azure-translation-v1.p.rapidapi.com")
+              .header("X-RapidAPI-Key", "<YOUR_RAPID_API_KEY>")
+              .header("Accept", "application/json")
+              .asJson<string>();
+          Console.WriteLine(response.Body.ToString());
+XmlDocument doc = new XmlDocument();
+doc.LoadXml(response.Body.ToString());
+Console.WriteLine(doc.DocumentElement.FirstChild.InnerText);
+response = Unirest.get("https://microsoft-azure-translation-v1.p.rapidapi.com/GetLanguagesForTranslate")
+              .header("X-RapidAPI-Host", "microsoft-azure-translation-v1.p.rapidapi.com")
+              .header("X-RapidAPI-Key", "<YOUR_RAPID_API_KEY>")
+              .asJson<string>();
+ 
+doc.LoadXml(response.Body.ToString());
+ 
+foreach(XmlNode node in doc.DocumentElement.ChildNodes){
+  Console.WriteLine(node.InnerText);
+}
+public class IndexModel : PageModel
+   {
+       private string host = "https://microsoft-azure-translation-v1.p.rapidapi.com/";
+       private string x_rapid_api_host = "microsoft-azure-translation-v1.p.rapidapi.com";
+       private string x_rapid_api_key = "<YOUR_RAPID_API_KEY>";
+       private readonly ILogger<IndexModel> _logger;
+       public IndexModel(ILogger<IndexModel> logger)
+       {
+           _logger = logger;
+       }
+       public void OnGet()
+       {
+           string endpoint = "GetLanguagesForTranslate";
+           HttpResponse<string> response = Unirest.get(host + endpoint)
+               .header("X-RapidAPI-Host", x_rapid_api_host)
+               .header("X-RapidAPI-Key", x_rapid_api_key)
+               .asJson<string>();
+           XmlDocument doc = new XmlDocument();
+           doc.LoadXml(response.Body.ToString());
+           List<string> languages = new List<string>();
+           foreach(XmlNode node in doc.DocumentElement.ChildNodes){
+               languages.Add(node.InnerText);
+           }
+           ViewData["languages"] = languages;
+       }
+      
+       public void OnPost(){
+           var from = Request.Form["from"];
+           var to = Request.Form["to"];
+           var text = Request.Form["text"];
+           Console.WriteLine("________" + from);
+           string endpoint = "translate";
+           string fields = "?from=" + from + "&to=" + to + "&text=" + text;
+           HttpResponse<string> response = Unirest.get(host + endpoint + fields)
+               .header("X-RapidAPI-Host", x_rapid_api_host)
+               .header("X-RapidAPI-Key", x_rapid_api_key)
+               .header("Accept", "application/json")
+               .asJson<string>();
+           XmlDocument doc = new XmlDocument();
+           doc.LoadXml(response.Body.ToString());
+           ViewData["translation"] = doc.DocumentElement.FirstChild.InnerText;
+           Console.WriteLine(doc.DocumentElement.FirstChild.InnerText);
+       }
+   }
